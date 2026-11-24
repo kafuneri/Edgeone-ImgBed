@@ -1,0 +1,47 @@
+name: Archive Images from Blob
+
+on:
+  schedule:
+    # Every 3 days at 19:00 UTC (03:00 Beijing Time)
+    - cron: '0 19 */3 * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI or ImgBed Admin
+
+permissions:
+  contents: write
+
+jobs:
+  archive-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Cleanup previous archived Blobs, download new Blobs & update manifest
+        env:
+          EO_PROJECT_ID: ${{ vars.EO_PROJECT_ID || secrets.EO_PROJECT_ID }}
+          EO_API_TOKEN: ${{ secrets.EO_API_TOKEN }}
+          EO_IMAGE_HOST_URL: ${{ vars.EO_IMAGE_HOST_URL || secrets.EO_IMAGE_HOST_URL }}
+        run: node scripts/archive-from-blob.mjs
+
+      - name: Commit and push archived static files
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A public/img/ public/_meta/manifest.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: archive images from Blob and update manifest"
+            git push origin main
+          fi
