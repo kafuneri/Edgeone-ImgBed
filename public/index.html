@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>EdgeOne ImgBed - 个人博客图床</title>
+  <link rel="icon" href="/assets/logo.png" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="preload" href="/assets/Pacifico-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/assets/UnidreamLED.ttf" as="font" type="font/ttf" crossorigin />
+  <link rel="stylesheet" href="/assets/style.css?v=1.5.0" />
+</head>
+<body class="wallpaper-active">
+  <!-- Background Wallpaper Layer -->
+  <div id="bgWallpaper" class="wallpaper-layer" aria-hidden="true"></div>
+
+  <!-- Global Glassmorphic Toast Container -->
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <!-- Hidden File Inputs -->
+  <input type="file" id="fileInput" multiple accept="image/*,.jxl,.avif,video/mp4,.mkv,audio/mpeg,.mp3,.m4a,text/plain,.txt,.sh,.zip,application/zip" style="display: none;" />
+  <input type="file" id="directFileInput" multiple accept="image/*,.jxl,.avif,video/mp4,.mkv,audio/mpeg,.mp3,.m4a,text/plain,.txt,.sh,.zip,application/zip" style="display: none;" />
+
+  <!-- Auth Login Overlay -->
+  <div id="authWrapper" class="login-page">
+    <a
+      href="https://github.com/kafuneri/Edgeone-ImgBed"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="github-corner-link logo--fixed logo--hover-enabled"
+      id="loginGithubLink"
+      title="GitHub Repository"
+    >
+      <span class="github-corner-badge" id="loginGithubIcon"></span>
+    </a>
+
+    <div class="login-top-controls">
+      <button type="button" id="loginLangToggle" class="glass-icon-btn" title="Switch Language"></button>
+      <button type="button" id="loginThemeToggle" class="glass-icon-btn theme-toggle-btn" title="Toggle Theme"></button>
+    </div>
+
+    <div class="login-container">
+      <h1 class="login-title">
+        <span class="login-heading-prefix" data-i18n="login.headingPrefix">登录到</span>
+        <span class="pacifico-font">EdgeOne ImgBed</span>
+      </h1>
+      <form id="loginForm" class="login-form">
+        <div class="input-container">
+          <label for="loginPassword" class="input-name" data-i18n="login.passwordLabel">密码</label>
+          <div class="input-wrapper" id="loginInputWrapper">
+            <span class="input-prefix-icon" id="loginLockIcon" aria-hidden="true"></span>
+            <input
+              type="password"
+              id="loginPassword"
+              class="password-field"
+              data-i18n-placeholder="login.passwordPlaceholder"
+              placeholder="请输入认证码"
+              required
+              autocomplete="current-password"
+            />
+            <button type="button" id="togglePwdBtn" class="input-suffix-btn" aria-label="Toggle password visibility"></button>
+          </div>
+        </div>
+        <div id="loginError" class="auth-error"></div>
+        <button type="submit" id="loginSubmitBtn" class="submit-btn">
+          <span class="submit-label" data-i18n="login.submit">登 录</span>
+          <span class="loading-ring" aria-hidden="true"></span>
+        </button>
+      </form>
+    </div>
+
+    <footer class="page-footer">
+      <span>Copyright 2026 EdgeOne ImgBed · <strong class="footer-name" data-i18n="footer.powered">由 EdgeOne Makers 驱动</strong></span>
+    </footer>
+  </div>
+
+  <!-- Main Authenticated Application Shell -->
+  <div id="appShell" class="app-shell" style="display: none;">
+    <!-- Floating Glassmorphic Header -->
+    <div class="admin-header-spacer"></div>
+    <header class="admin-header-content" id="appHeader">
+      <div class="header-left-group">
+        <!-- Page Switcher Dropdown -->
+        <div class="page-switcher" id="pageSwitcher">
+          <div class="page-switcher-sheet">
+            <button type="button" class="page-option is-current" id="pageSwitcherCurrent">
+              <span class="page-option-icon" id="currentTabIcon"></span>
+              <span class="page-switcher-title" id="currentTabLabel">文件管理</span>
+              <span class="page-switcher-arrow" id="pageSwitcherArrow"></span>
+            </button>
+            <div class="page-option-list" id="pageSwitcherMenu">
+              <button type="button" class="page-option" data-tab="dashboard">
+                <span class="page-option-icon" data-icon="image"></span>
+                <span data-i18n="nav.dashboard">文件管理</span>
+              </button>
+              <button type="button" class="page-option" data-tab="upload">
+                <span class="page-option-icon" data-icon="cloudUpload"></span>
+                <span data-i18n="nav.upload">上传工作台</span>
+              </button>
+              <button type="button" class="page-option" data-tab="settings">
+                <span class="page-option-icon" data-icon="settings"></span>
+                <span data-i18n="nav.settings">系统设置</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right-group">
+        <div class="header-search-wrap" id="headerSearchWrap">
+          <span class="search-svg" id="headerSearchIcon"></span>
+          <input type="text" id="searchInput" class="header-search-input" data-i18n-placeholder="header.searchPlaceholder" placeholder="搜索: 名称或路径..." />
+          <button type="button" id="clearSearchBtn" class="search-clear-btn" style="display: none;"></button>
+        </div>
+
+        <div class="filter-dropdown" id="filterDropdownWrap">
+          <button type="button" id="filterToggleBtn" class="admin-header-control filter-trigger-btn" data-i18n-title="header.filter" aria-haspopup="true" aria-expanded="false"></button>
+          <div class="filter-dropdown-menu" id="filterDropdownMenu" role="menu">
+            <div class="filter-group-title" data-i18n="header.filterChannel">存储渠道</div>
+            <div class="filter-option-list">
+              <button type="button" class="filter-menu-item" data-filter-channel="archived">
+                <span class="filter-item-label">Static</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+              <button type="button" class="filter-menu-item" data-filter-channel="staging">
+                <span class="filter-item-label">Blob</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+              <button type="button" class="filter-menu-item" data-filter-channel="pending_delete">
+                <span class="filter-item-label">Deleted</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+            </div>
+            <div class="filter-menu-divider"></div>
+            <div class="filter-group-title" data-i18n="header.filterFileType">文件类型</div>
+            <div class="filter-option-list">
+              <button type="button" class="filter-menu-item" data-filter-type="image">
+                <span class="filter-item-label" data-i18n="header.typeImage">图片</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+              <button type="button" class="filter-menu-item" data-filter-type="video">
+                <span class="filter-item-label" data-i18n="header.typeVideo">视频</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+              <button type="button" class="filter-menu-item" data-filter-type="audio">
+                <span class="filter-item-label" data-i18n="header.typeAudio">音频</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+              <button type="button" class="filter-menu-item" data-filter-type="other">
+                <span class="filter-item-label" data-i18n="header.typeOther">其他</span>
+                <span class="filter-item-check" data-icon="check"></span>
+              </button>
+            </div>
+            <div class="filter-menu-divider"></div>
+            <button type="button" class="filter-clear-btn" id="clearFilterBtn" disabled>
+              <span data-icon="x"></span>
+              <span data-i18n="header.clearFilter">清除筛选</span>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" id="themeToggle" class="admin-header-control theme-toggle-btn" title="Toggle Theme"></button>
+        <button type="button" id="langToggle" class="admin-header-control" title="Switch Language"></button>
+        <button type="button" id="refreshBtn" class="admin-header-control" data-i18n-title="header.refresh"></button>
+        <button type="button" id="logoutBtn" class="admin-header-control" data-i18n-title="header.logout"></button>
+      </div>
+    </header>
+
+    <!-- View A: Dashboard File Manager -->
+    <main id="dashboardView" class="dashboard-view">
+      <!-- Sub-Toolbar -->
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-left">
+          <button type="button" id="selectAllBtn" class="dashboard-checkbox" data-i18n-title="dash.selectAll" aria-label="Select All">
+            <span class="dashboard-checkbox-mark" id="selectAllMark"></span>
+          </button>
+
+          <div class="toolbar-btn-group" id="viewModeGroup">
+            <button type="button" class="toolbar-icon-btn active" data-mode="grid" data-i18n-title="dash.gridView"></button>
+            <button type="button" class="toolbar-icon-btn" data-mode="list" data-i18n-title="dash.listView"></button>
+            <button type="button" class="toolbar-icon-btn" data-mode="waterfall" data-i18n-title="dash.waterfallView"></button>
+          </div>
+
+          <button type="button" id="sortBtn" class="toolbar-pill-btn">
+            <span id="sortIconWrap"></span>
+            <span id="sortLabel">最新</span>
+          </button>
+
+          <nav id="breadcrumbs" class="breadcrumbs-bar" aria-label="Breadcrumbs"></nav>
+
+          <button type="button" id="directUploadBtn" class="toolbar-pill-btn primary-pill">
+            <span id="directUploadIcon"></span>
+            <span data-i18n="dash.uploadHere">上传到此目录</span>
+          </button>
+
+          <button type="button" id="newFolderBtn" class="toolbar-pill-btn">
+            <span id="newFolderIcon"></span>
+            <span data-i18n="dash.newFolder">新建目录</span>
+          </button>
+
+          <button type="button" id="deleteFolderBtn" class="toolbar-pill-btn danger-pill" style="display: none;">
+            <span id="deleteFolderIcon"></span>
+            <span data-i18n="dash.deleteFolder">删除空目录</span>
+          </button>
+        </div>
+
+        <div class="sub-toolbar-right">
+          <button type="button" id="statTotal" class="stats-pill total clickable active" data-status-pill="all"></button>
+          <button type="button" id="statArchived" class="stats-pill archived clickable" data-status-pill="archived"></button>
+          <button type="button" id="statStaging" class="stats-pill staging clickable" data-status-pill="staging"></button>
+          <button type="button" id="statPendingDelete" class="stats-pill pending-delete clickable" data-status-pill="pending_delete" style="display: none;"></button>
+        </div>
+      </div>
+
+      <!-- Folder Cards Section -->
+      <section id="foldersSection" class="folders-section" style="display: none;">
+        <div id="foldersGrid" class="folders-grid"></div>
+      </section>
+
+      <!-- Gallery Container (Grid / List / Waterfall / Skeleton) -->
+      <div id="galleryContainer"></div>
+
+      <!-- Pagination Bar -->
+      <div id="paginationBar" class="pagination-container" style="display: none;"></div>
+    </main>
+
+    <!-- View B: Upload Hub -->
+    <main id="uploadHubView" class="upload-hub-view" style="display: none;">
+      <div class="hub-top-bar">
+        <button type="button" id="triggerArchiveBtn" class="hub-config-pill hub-action-pill">
+          <span id="triggerArchiveIcon"></span>
+          <span data-i18n="upload.archiveNow">立即归档</span>
+        </button>
+        <div class="hub-config-pill">
+          <label class="hub-cfg-label" data-i18n="upload.dir">目录</label>
+          <select id="uploadFolderSelect" class="hub-select"></select>
+          <button type="button" id="hubNewFolderBtn" class="hub-mini-btn"></button>
+        </div>
+        <div class="hub-config-pill">
+          <label class="hub-cfg-label" data-i18n="upload.filename">文件名</label>
+          <input type="text" id="uploadCustomName" class="hub-input" data-i18n-placeholder="upload.filenamePlaceholder" placeholder="留空保留原名" />
+        </div>
+        <label class="hub-config-pill hub-switch-pill">
+          <input type="checkbox" id="uploadCompressCheck" checked />
+          <span data-i18n="upload.compressAuto">智能压缩</span>
+        </label>
+      </div>
+      <div id="hubQuickFolders" class="hub-quick-folders" style="display: none;"></div>
+
+      <h1 class="hub-title pacifico-font">EdgeOne ImgHub</h1>
+
+      <div class="upload-form">
+        <div class="upload-card-wrapper">
+          <div id="dropzone" class="upload-card" tabindex="0" role="button" aria-label="Upload dropzone">
+            <div class="el-upload-dragger" id="uploadDragger">
+              <div class="upload-card-glow" id="uploadGlow"></div>
+              <div class="upload-plus-icon" id="uploadPlusIcon"></div>
+              <div class="upload-prompt-row">
+                <span class="upload-prompt-text" data-i18n="upload.prompt">拖拽 点击 或 Ctrl + V 粘贴上传</span>
+              </div>
+              <div class="upload-sub-hint" data-i18n="upload.subHint">按上传设置自动优化 · 预签名直传 Blob · 单文件上限 25 MiB</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Upload Queue & Results List -->
+        <div id="uploadListCard" class="upload-list-card">
+          <div class="upload-list-header">
+            <div class="upload-stats-summary">
+              <span class="stat-item"><span id="qTotalIcon"></span> <strong id="qTotalCount">0</strong></span>
+              <span class="stat-item stat-ok"><span id="qOkIcon"></span> <strong id="qSuccessCount">0</strong></span>
+              <span class="stat-item stat-err"><span id="qErrIcon"></span> <strong id="qFailCount">0</strong></span>
+            </div>
+            <div class="upload-list-actions">
+              <button type="button" id="copyAllUrlsBtn" class="list-hdr-btn" data-i18n="upload.copyAllUrl">复制全部 URL</button>
+              <button type="button" id="copyAllMdBtn" class="list-hdr-btn" data-i18n="upload.copyAllMd">复制全部 MD</button>
+              <button type="button" id="retryFailedBtn" class="list-hdr-btn retry" style="display: none;"></button>
+              <button type="button" id="clearQueueBtn" class="list-hdr-btn danger"></button>
+            </div>
+          </div>
+          <div id="uploadQueueList" class="upload-queue-list"></div>
+        </div>
+      </div>
+
+      <footer class="page-footer hub-footer">
+        <span>Copyright 2026 EdgeOne ImgBed · <strong class="footer-name" data-i18n="footer.powered">由 EdgeOne Makers 驱动</strong></span>
+      </footer>
+    </main>
+
+    <!-- View C: System Settings (CloudFlare-ImgBed Style) -->
+    <main id="settingsView" class="settings-view" style="display: none;">
+      <aside class="settings-sidebar" id="settingsSidebar">
+        <div class="settings-menu-list">
+          <button type="button" class="settings-menu-item active" data-subtab="status">
+            <span class="settings-menu-icon" data-icon="activity"></span>
+            <span class="settings-menu-text" data-i18n="settings.navStatus">系统状态</span>
+          </button>
+          <button type="button" class="settings-menu-item" data-subtab="upload-config">
+            <span class="settings-menu-icon" data-icon="cloudUpload"></span>
+            <span class="settings-menu-text" data-i18n="settings.navUpload">上传设置</span>
+          </button>
+          <button type="button" class="settings-menu-item" data-subtab="web-config">
+            <span class="settings-menu-icon" data-icon="monitor"></span>
+            <span class="settings-menu-text" data-i18n="settings.navWeb">网页设置</span>
+          </button>
+        </div>
+        <button type="button" id="settingsSidebarToggle" class="settings-sidebar-toggle" title="Collapse">
+          <span id="sidebarToggleIcon"></span>
+        </button>
+      </aside>
+
+      <div class="settings-main" id="settingsMain">
+        <!-- Sub-page 1: System Status -->
+        <section id="settingsStatusPanel" class="settings-panel">
+          <div class="status-hero">
+            <div class="status-hero-copy">
+              <div class="status-hero-kicker">
+                <span class="system-health-badge">
+                  <span class="system-health-dot"></span>
+                  <span data-i18n="status.healthOk">系统运行正常</span>
+                </span>
+                <span id="statusHeroDate" class="status-hero-date"></span>
+              </div>
+              <h2 id="statusGreeting" class="status-hero-title">中午好，保持好状态</h2>
+              <p id="statusSummary" class="status-hero-summary"></p>
+            </div>
+            <div class="status-hero-time-card">
+              <span class="status-hero-time-caption" data-i18n="status.clockCaption">本地实时时钟</span>
+              <div id="statusClock" class="status-hero-time">00:00:00</div>
+              <div id="statusTimezone" class="status-hero-timezone"></div>
+            </div>
+          </div>
+
+          <div class="overview-cards">
+            <div class="overview-card clickable" id="statusTotalCard">
+              <div class="overview-icon-box" id="statusTotalIcon"></div>
+              <div class="overview-card-body">
+                <div class="overview-label" data-i18n="status.totalFiles">文件总数</div>
+                <div class="overview-value" id="statusTotalValue">0</div>
+                <div class="overview-sub" data-i18n="status.clickRefresh">点击刷新</div>
+              </div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-icon-box" id="statusIndexIcon"></div>
+              <div class="overview-card-body">
+                <div class="overview-label" data-i18n="status.indexUpdated">索引更新时间</div>
+                <div class="overview-value overview-value-sm" id="statusIndexTime">-</div>
+                <div class="overview-sub" id="statusIndexRel">-</div>
+              </div>
+            </div>
+            <a href="https://github.com/kafuneri/Edgeone-ImgBed" target="_blank" rel="noopener noreferrer" class="overview-card clickable" style="text-decoration: none;">
+              <div class="overview-icon-box" id="statusVerIcon"></div>
+              <div class="overview-card-body">
+                <div class="overview-label" data-i18n="status.sysVersion">系统版本</div>
+                <div class="overview-value">v1.5.0</div>
+                <div class="overview-sub" data-i18n="status.viewRepo">点击查看 GitHub 仓库</div>
+              </div>
+            </a>
+          </div>
+
+          <!-- Trend Chart -->
+          <div class="chart-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title" id="trendChartTitle"></span>
+            </div>
+            <div id="trendChartBody" class="chart-body"></div>
+          </div>
+
+          <!-- Two Distribution Donut Charts -->
+          <div class="charts-grid-2">
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <span class="chart-card-title" id="channelChartTitle"></span>
+              </div>
+              <div id="channelChartBody" class="chart-body"></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-header">
+                <span class="chart-card-title" id="formatChartTitle"></span>
+              </div>
+              <div id="formatChartBody" class="chart-body"></div>
+            </div>
+          </div>
+
+          <!-- Maintenance Action Bar -->
+          <div class="chart-card maint-bar-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title" data-i18n="status.maintTitle">系统维护</span>
+            </div>
+            <div class="maint-actions-row">
+              <button type="button" id="maintRefreshBtn" class="btn btn-secondary" data-i18n="status.maintRefresh">刷新索引</button>
+              <button type="button" id="maintArchiveBtn" class="btn btn-secondary" data-i18n="status.maintArchive">立即归档</button>
+              <button type="button" id="maintDupScanBtn" class="btn btn-secondary" data-i18n="status.maintDupScan">重复内容扫描</button>
+              <button type="button" id="maintExportBtn" class="btn btn-secondary" data-i18n="status.maintExport">导出清单 JSON</button>
+              <a href="/gallery.html" target="_blank" rel="noopener" class="btn btn-secondary" style="text-decoration: none;" data-i18n="status.maintGallery">访客图库</a>
+            </div>
+          </div>
+
+          <!-- Recent Uploads (Top 4) -->
+          <div class="chart-card status-recent-card">
+            <div class="chart-card-header">
+              <span class="chart-card-title" data-i18n="status.recentTitle">最近上传</span>
+            </div>
+            <div id="statusRecentList" class="status-recent-list"></div>
+          </div>
+        </section>
+
+        <!-- Sub-page 2: Upload Settings -->
+        <section id="settingsUploadPanel" class="settings-panel" style="display: none;">
+          <div class="settings-section-head">
+            <h2 data-i18n="cfg.uploadTitle">上传设置</h2>
+            <p data-i18n="cfg.uploadSub"></p>
+          </div>
+          <div class="settings-glass-form">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.formatLimitEnable">上传格式限制</div>
+                <div class="setting-desc" data-i18n="cfg.formatLimitDesc"></div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfgFormatLimit" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.limitMode">限制模式</div>
+              </div>
+              <div class="mode-pills" id="cfgLimitModeGroup">
+                <button type="button" class="mode-pill" data-mode="common" data-i18n="cfg.modeCommon">常用格式组</button>
+                <button type="button" class="mode-pill" data-mode="all" data-i18n="cfg.modeAll">全部支持格式</button>
+                <button type="button" class="mode-pill" data-mode="custom" data-i18n="cfg.modeCustom">自定义</button>
+              </div>
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-label" data-i18n="cfg.allowedFormats">允许上传的格式</div>
+              <div class="format-chips" id="cfgAllowedFormats"></div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.targetFormat">目标输出格式</div>
+                <div class="setting-desc" data-i18n="cfg.targetFormatDesc"></div>
+              </div>
+              <div class="mode-pills" id="cfgTargetFormatGroup">
+                <button type="button" class="mode-pill" data-target-fmt="avif" data-i18n="cfg.fmtAvif">AVIF 优先</button>
+                <button type="button" class="mode-pill" data-target-fmt="webp" data-i18n="cfg.fmtWebp">WebP</button>
+                <button type="button" class="mode-pill" data-target-fmt="original" data-i18n="cfg.fmtOriginal">保持原格式</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.enableCompress">默认开启压缩</div>
+                <div class="setting-desc" data-i18n="cfg.enableCompressDesc"></div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfgEnableCompress" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-label" data-i18n="cfg.compressThreshold">默认压缩阈值 (MB)</div>
+              <div class="slider-row">
+                <input type="range" id="cfgThresholdRange" min="0" max="5" step="0.1" class="range-input" />
+                <input type="number" id="cfgThresholdNum" min="0" max="25" step="0.1" class="form-input num-input" />
+              </div>
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-label" data-i18n="cfg.compressTarget">默认压缩期望 (MB)</div>
+              <div class="slider-row">
+                <input type="range" id="cfgTargetRange" min="0.2" max="5" step="0.05" class="range-input" />
+                <input type="number" id="cfgTargetNum" min="0.1" max="25" step="0.05" class="form-input num-input" />
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.maxDimension">最大边长限制 (px)</div>
+              </div>
+              <input type="number" id="cfgMaxDim" min="512" max="4096" step="128" class="form-input num-input" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.namingMode">默认命名方式</div>
+                <div class="setting-desc" data-i18n="cfg.namingModeDesc"></div>
+              </div>
+              <div class="mode-pills" id="cfgNamingModeGroup">
+                <button type="button" class="mode-pill" data-naming-mode="original" data-i18n="cfg.nameOriginal">保留原名</button>
+                <button type="button" class="mode-pill" data-naming-mode="timestamp" data-i18n="cfg.nameTimestamp">时间戳</button>
+                <button type="button" class="mode-pill" data-naming-mode="date_prefix" data-i18n="cfg.nameDatePrefix">日期前缀</button>
+                <button type="button" class="mode-pill" data-naming-mode="short_id" data-i18n="cfg.nameShortId">随机短 ID</button>
+              </div>
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.defaultFolder">默认上传目录</div>
+                <div class="setting-desc" data-i18n="cfg.defaultFolderDesc"></div>
+              </div>
+              <input type="text" id="cfgDefaultFolder" class="form-input" data-i18n-placeholder="cfg.defaultFolderPh" placeholder="例如: blog/2026（留空表示根目录）" />
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.quickFolders">常用目录快捷项</div>
+                <div class="setting-desc" data-i18n="cfg.quickFoldersDesc"></div>
+              </div>
+              <input type="text" id="cfgQuickFolders" class="form-input" data-i18n-placeholder="cfg.quickFoldersPh" placeholder="例如: blog, wallpapers, notes" />
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.dedupEnable">上传前重复检测</div>
+                <div class="setting-desc" data-i18n="cfg.dedupEnableDesc"></div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfgDedupEnabled" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row column-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.apiTokenTipTitle">API_TOKEN 接入配置（Typora / PicGo）</div>
+                <div class="setting-desc" data-i18n="cfg.apiTokenTipDesc"></div>
+              </div>
+              <pre id="cfgApiSnippetBox" class="api-snippet-box"></pre>
+              <div>
+                <button type="button" id="cfgCopyPicgoBtn" class="btn btn-secondary" data-i18n="cfg.copyPicgoBtn">复制配置示例</button>
+              </div>
+            </div>
+
+            <div class="settings-actions-bar">
+              <button type="button" id="cfgResetUploadBtn" class="btn btn-secondary" data-i18n="cfg.resetBtn">恢复默认</button>
+              <button type="button" id="cfgSaveUploadBtn" class="btn btn-primary" data-i18n="cfg.saveBtn">保存设置</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sub-page 3: Web Settings -->
+        <section id="settingsWebPanel" class="settings-panel" style="display: none;">
+          <div class="settings-section-head">
+            <h2 data-i18n="cfg.webTitle">网页设置</h2>
+            <p data-i18n="cfg.webSub"></p>
+          </div>
+          <div class="settings-glass-form">
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.wallpaper">背景壁纸</div>
+                <div class="setting-desc" data-i18n="cfg.wallpaperDesc"></div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" id="cfgWallpaper" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.themeMode">主题模式</div>
+              </div>
+              <div class="mode-pills" id="cfgThemeGroup">
+                <button type="button" class="mode-pill" data-theme-val="dark" data-i18n="cfg.themeDark">深色</button>
+                <button type="button" class="mode-pill" data-theme-val="light" data-i18n="cfg.themeLight">浅色</button>
+                <button type="button" class="mode-pill" data-theme-val="auto" data-i18n="cfg.themeAuto">跟随系统</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.language">界面语言</div>
+              </div>
+              <div class="mode-pills" id="cfgLangGroup">
+                <button type="button" class="mode-pill" data-lang-val="zh">简体中文</button>
+                <button type="button" class="mode-pill" data-lang-val="en">English</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.defaultView">默认首页视图</div>
+              </div>
+              <select id="cfgDefaultTab" class="form-select compact-select">
+                <option value="dashboard" data-i18n="nav.dashboard">文件管理</option>
+                <option value="upload" data-i18n="nav.upload">上传工作台</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.pageSize">每页展示数量</div>
+              </div>
+              <select id="cfgPageSize" class="form-select compact-select">
+                <option value="24">24</option>
+                <option value="48">48</option>
+                <option value="96">96</option>
+              </select>
+            </div>
+
+            <div class="setting-row">
+              <div class="setting-info">
+                <div class="setting-label" data-i18n="cfg.defaultCopyFmt">默认快捷复制格式</div>
+              </div>
+              <select id="cfgCopyFmt" class="form-select compact-select">
+                <option value="url">URL</option>
+                <option value="markdown">MarkDown</option>
+                <option value="html">HTML</option>
+                <option value="bbcode">BBCode</option>
+              </select>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Inline Direct Folder Upload Dock (in File Manager) -->
+    <div id="inlineUploadDock" class="inline-upload-dock" style="display: none;">
+      <div class="inline-dock-header">
+        <span id="inlineDockTitle" class="inline-dock-title"></span>
+        <button type="button" id="inlineDockClose" class="inline-dock-close" aria-label="Close"></button>
+      </div>
+      <div id="inlineDockList" class="inline-dock-list"></div>
+    </div>
+
+    <!-- Bottom Floating Batch Action Dock -->
+    <div id="batchBar" class="batch-floating-bar" style="display: none;">
+      <div class="batch-selection-summary">
+        <span id="batchCount" class="batch-selection-count">0</span>
+      </div>
+      <div class="batch-toolbar-divider"></div>
+      <div class="batch-floating-actions">
+        <button type="button" id="batchCopyUrlBtn" class="batch-floating-btn copy" data-i18n="batch.copyUrl">URL</button>
+        <button type="button" id="batchCopyMdBtn" class="batch-floating-btn copy" data-i18n="batch.copyMd">MD</button>
+        <button type="button" id="batchCopyHtmlBtn" class="batch-floating-btn copy" data-i18n="batch.copyHtml">HTML</button>
+        <button type="button" id="batchUndoDeleteBtn" class="batch-floating-btn" data-i18n-title="batch.undoDelete" style="display: none;"></button>
+        <button type="button" id="batchDeleteBtn" class="batch-floating-btn danger" data-i18n-title="batch.delete"></button>
+        <button type="button" id="batchClearBtn" class="batch-floating-btn ghost" data-i18n-title="batch.clear"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Detail & Metadata Modal -->
+  <div id="detailModal" class="modal-backdrop" style="display: none;">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h3 class="modal-title" id="detailTitle">文件详情</h3>
+        <button type="button" class="modal-close" data-close="detailModal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body detail-body-layout">
+        <div class="preview-section" id="detailPreviewWrap"></div>
+        <div class="detail-info-panel">
+          <div class="detail-meta-table" id="detailMetaTable"></div>
+          <div class="detail-links-list" id="detailLinksList"></div>
+        </div>
+      </div>
+      <div class="modal-footer" id="detailFooter"></div>
+    </div>
+  </div>
+
+  <!-- New Folder Modal -->
+  <div id="folderModal" class="modal-backdrop" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="modal.newFolderTitle">新建文件夹</h3>
+        <button type="button" class="modal-close" data-close="folderModal" aria-label="Close"></button>
+      </div>
+      <form id="folderForm" class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="folderNameInput" data-i18n="modal.newFolderLabel">文件夹名称（支持多级路径，如 blog/2026）</label>
+          <input type="text" id="folderNameInput" class="form-input" data-i18n-placeholder="modal.newFolderPlaceholder" placeholder="字母/数字/下划线/中文，例如: blog/2026" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel" data-close="folderModal" data-i18n="modal.cancel">取消</button>
+          <button type="submit" id="folderSubmitBtn" class="btn btn-primary" data-i18n="modal.create">确认创建</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Move / Rename Modal -->
+  <div id="moveModal" class="modal-backdrop" style="display: none;">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="modal.moveTitle">移动 / 重命名暂存图片</h3>
+        <button type="button" class="modal-close" data-close="moveModal" aria-label="Close"></button>
+      </div>
+      <form id="moveForm" class="modal-body">
+        <div class="move-current-path">
+          <span data-i18n="modal.currentFile">当前文件:</span> <code id="moveFromPath"></code>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="moveToFolderSelect" data-i18n="modal.targetFolder">目标文件夹</label>
+          <select id="moveToFolderSelect" class="form-select"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="moveToNameInput" data-i18n="modal.newFileName">新文件名（含后缀）</label>
+          <input type="text" id="moveToNameInput" class="form-input" />
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary modal-cancel" data-close="moveModal" data-i18n="modal.cancel">取消</button>
+          <button type="submit" id="moveSubmitBtn" class="btn btn-primary" data-i18n="modal.save">保存修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Duplicate Scan Modal -->
+  <div id="dupModal" class="modal-backdrop" style="display: none;">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <h3 class="modal-title" data-i18n="status.dupModalTitle">重复内容扫描结果</h3>
+        <button type="button" class="modal-close" data-close="dupModal" aria-label="Close"></button>
+      </div>
+      <div id="dupModalBody" class="modal-body dup-group-list"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary modal-cancel" data-close="dupModal" data-i18n="detail.close">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Image Viewer Lightbox -->
+  <div id="lightbox" class="lightbox-overlay" style="display: none;">
+    <button type="button" id="lbClose" class="lb-circle-btn lb-close" title="Esc"></button>
+    <button type="button" id="lbPrev" class="lb-circle-btn lb-prev"></button>
+    <button type="button" id="lbNext" class="lb-circle-btn lb-next"></button>
+    <div class="lb-stage" id="lbStage">
+      <img id="lightboxImg" class="lightbox-content" src="" alt="Preview" />
+    </div>
+    <div class="lb-toolbar" id="lbToolbar">
+      <button type="button" id="lbZoomOut"></button>
+      <button type="button" id="lbZoomIn"></button>
+      <button type="button" id="lbReset">1:1</button>
+      <button type="button" id="lbRotateLeft"></button>
+      <button type="button" id="lbRotateRight"></button>
+      <button type="button" id="lbCopyUrl"></button>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/app.js?v=1.5.0"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Gallery · EdgeOne ImgBed</title>
+  <link rel="icon" href="/assets/logo.png" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <link rel="preload" href="/assets/Pacifico-Regular.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/assets/style.css?v=1.5.0" />
+</head>
+<body class="wallpaper-active">
+  <div id="bgWallpaper" class="wallpaper-layer" aria-hidden="true"></div>
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+  <div class="app-shell">
+    <div class="admin-header-spacer"></div>
+    <header class="admin-header-content">
+      <div class="header-left-group">
+        <a href="/gallery.html" class="page-option is-current" style="text-decoration: none;">
+          <span class="page-option-icon" id="galBrandIcon"></span>
+          <span id="galTitle">访客图库</span>
+        </a>
+      </div>
+      <div class="header-right-group">
+        <div class="header-search-wrap">
+          <span class="search-svg" id="galSearchIcon"></span>
+          <input type="text" id="galSearchInput" class="header-search-input" placeholder="搜索文件名或路径..." />
+        </div>
+        <button type="button" id="galThemeBtn" class="admin-header-control" title="Toggle Theme"></button>
+        <button type="button" id="galLangBtn" class="admin-header-control" title="Switch Language"></button>
+        <a href="/" id="galAdminLink" class="admin-header-control" title="Admin"></a>
+      </div>
+    </header>
+
+    <main class="dashboard-view">
+      <div class="sub-toolbar">
+        <div class="sub-toolbar-left" id="galDirPills"></div>
+        <div class="sub-toolbar-right">
+          <span class="stats-pill total" id="galCountPill">0</span>
+        </div>
+      </div>
+
+      <div id="galContainer"></div>
+    </main>
+  </div>
+
+  <div id="galLightbox" class="lightbox-overlay" style="display: none;">
+    <button type="button" id="galLbClose" class="lb-circle-btn lb-close" aria-label="Close"></button>
+    <button type="button" id="galLbPrev" class="lb-circle-btn lb-prev" aria-label="Previous"></button>
+    <button type="button" id="galLbNext" class="lb-circle-btn lb-next" aria-label="Next"></button>
+    <div class="lb-stage" id="galLbStage">
+      <img id="galLbImg" class="lightbox-content" src="" alt="" />
+    </div>
+    <div class="lb-toolbar">
+      <button type="button" id="galLbCopyUrl"></button>
+    </div>
+  </div>
+
+  <script type="module" src="/assets/gallery.js?v=1.5.0"></script>
+</body>
+</html>
