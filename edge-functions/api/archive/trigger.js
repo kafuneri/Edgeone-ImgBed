@@ -1,6 +1,5 @@
 import { verifyAuth } from "../../_utils/auth.js";
 
-const DEFAULT_REPO = "kafuneri/Edgeone-ImgBed";
 const DEFAULT_WORKFLOW = "archive-blob.yml";
 const DEFAULT_REF = "main";
 
@@ -15,7 +14,10 @@ export async function onRequestPost(context) {
     });
   }
 
-  const token = env.GITHUB_TOKEN || env.GH_TOKEN;
+  const token =
+    env.GITHUB_TOKEN ||
+    env.GH_TOKEN ||
+    (typeof process !== "undefined" && (process?.env?.GITHUB_TOKEN || process?.env?.GH_TOKEN));
   if (!token) {
     return new Response(
       JSON.stringify({
@@ -29,7 +31,24 @@ export async function onRequestPost(context) {
     );
   }
 
-  const repo = env.GITHUB_REPO || DEFAULT_REPO;
+  const repo = String(
+    env.GITHUB_REPO ||
+      (typeof process !== "undefined" && process?.env?.GITHUB_REPO) ||
+      ""
+  ).trim();
+  if (!repo || !/^[\w.-]+\/[\w.-]+$/.test(repo)) {
+    return new Response(
+      JSON.stringify({
+        ok: false,
+        error: "未配置有效的 GITHUB_REPO 环境变量，请在 EdgeOne Pages 控制台添加目标仓库（格式：owner/repo）",
+      }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+      }
+    );
+  }
+
   const workflow = env.GITHUB_WORKFLOW || DEFAULT_WORKFLOW;
   const ref = env.GITHUB_BRANCH || DEFAULT_REF;
 

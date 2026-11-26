@@ -14,7 +14,7 @@
   - 支持对已归档静态文件点击「删除」（标记为 `Pending Del` / 待删除）或批量标记；在下次归档 Action 运行前可随时「撤销删除」，下次 Action 运行时自动从仓库删除并更新索引。
 - **多格式支持与客户端压缩**：
   - 支持常见图片（WebP / PNG / JPG / GIF / AVIF / JXL / SVG / ICO）、视频（MP4 / MKV）、音频（MP3 / M4A）、文本/脚本（TXT / SH）与压缩包（ZIP）。
-  - 浏览器端 Canvas / WebAssembly（AVIF）自动压缩，配合 `/api/upload/presign` 预签名直传绕过边缘函数请求体限制（单文件上限 25 MiB）。
+  - 浏览器端 Canvas / WebAssembly（AVIF）自动压缩，配合 `/api/upload/presign` 预签名直传绕过边缘函数请求体限制（单文件上限 25 MiB）；在上传工作台取消勾选「智能压缩」时直接原文件直传，不再强制转码。
 - **SHA-256 秒传去重 & 访客只读图库**：
   - 上传前可选比对已归档文件 SHA-256，命中重复内容直接复用原外链。
   - 配置 `PUBLIC_GALLERY_DIRS` 后，可通过 `/gallery.html` 向访客开放指定目录的只读画廊（零 Blob 读开销）。
@@ -67,8 +67,10 @@ Edgeone-ImgBed/
 | `API_TOKEN` | 否 | 外链专用令牌（多个逗号分隔），仅允许上传与列表查询 |
 | `BLOB_STORE_NAME` | 否 | Blob 存储名称，默认 `blog-images` |
 | `PUBLIC_BASE_URL` | 否 | 自定义公开域名（如 `https://img.example.com`），未填则自动取请求域名 |
-| `GITHUB_TOKEN` | 否 | 仅需 `Actions: Read and write` 权限，用于后台点击「立即归档」 |
-| `GITHUB_REPO` | 否 | GitHub 仓库（如 `owner/repo`） |
+| `GITHUB_TOKEN` | 否 | 仅需 `Actions: Read and write` 权限，与 `GITHUB_REPO` 配合启用后台「立即归档」 |
+| `GITHUB_REPO` | 否 | 目标 GitHub 仓库（格式 `owner/repo`，无硬编码默认值，使用「立即归档」时必填） |
+| `GITHUB_WORKFLOW` | 否 | 归档工作流文件名，默认 `archive-blob.yml` |
+| `GITHUB_BRANCH` | 否 | 触发工作流的分支名，默认 `main` |
 | `PUBLIC_GALLERY_DIRS` | 否 | 开放给 `/gallery.html` 的目录列表（逗号分隔，如 `wallpapers,photos`） |
 
 ### 2. GitHub 仓库（Actions Secrets & Variables）

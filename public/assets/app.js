@@ -1658,6 +1658,16 @@ function isFileAllowed(file) {
   return allowed.includes(ext) || allowed.includes(rawExt);
 }
 
+function revokePreviewUrls(items) {
+  for (const item of items || []) {
+    if (item?.previewUrl && item.previewUrl.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(item.previewUrl);
+      } catch {}
+    }
+  }
+}
+
 function renderInlineDock() {
   if (state.inlineUploads.length === 0) {
     el.inlineUploadDock.style.display = "none";
@@ -1791,7 +1801,7 @@ async function processSingleUploadItem(item, targetDir, customName, enableCompre
         ? customName
         : applyNamingRule(item.file.name, settings.namingMode || "original");
 
-    if (enableCompress || settings.targetFormat !== "original") {
+    if (enableCompress) {
       try {
         const result = await compressImage(item.file, {
           targetFormat: settings.targetFormat,
@@ -1845,6 +1855,7 @@ async function processSingleUploadItem(item, targetDir, customName, enableCompre
     let putFailureReason = "";
     let finalUrl = "";
     let finalRelPath = "";
+    let shouldFallback = true;
 
     try {
       const presignRes = await authFetch("/api/upload/presign", {
@@ -1880,13 +1891,16 @@ async function processSingleUploadItem(item, targetDir, customName, enableCompre
         }
       } else {
         putFailureReason = presignData?.error || `HTTP ${presignRes.status}`;
+        if (presignRes.status >= 400 && presignRes.status < 500) {
+          shouldFallback = false;
+        }
       }
     } catch (presignErr) {
       putFailureReason = presignErr.message || "Presign failed";
     }
 
     if (!uploadSuccess) {
-      if (fileToSend.size <= 950 * 1024) {
+      if (shouldFallback && fileToSend.size <= 950 * 1024) {
         item.progress = 80;
         onProgress();
         const fallbackUrl = `/api/upload?dir=${encodeURIComponent(targetDir)}&name=${encodeURIComponent(nameToSend)}&overwrite=false`;
@@ -2608,6 +2622,7 @@ function setupEvents() {
     }
   });
   el.inlineDockClose.addEventListener("click", () => {
+    revokePreviewUrls(state.inlineUploads);
     state.inlineUploads = [];
     renderInlineDock();
   });
@@ -2751,7 +2766,11 @@ function setupEvents() {
     }
     loadFiles();
   });
-  el.clearQueueBtn.addEventListener("click", () => { state.uploadQueue = []; renderUploadQueue(); });
+  el.clearQueueBtn.addEventListener("click", () => {
+    revokePreviewUrls(state.uploadQueue);
+    state.uploadQueue = [];
+    renderUploadQueue();
+  });
 
   // Paste Upload (stays on dashboard if currently on dashboard!)
   window.addEventListener("paste", (e) => {

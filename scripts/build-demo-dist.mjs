@@ -311,15 +311,15 @@ async function main() {
   // Inject demo-mock.js into dist/index.html & dist/gallery.html
   const indexHtml = await fs.readFile(path.join(PUBLIC_DIR, "index.html"), "utf-8");
   const demoIndexHtml = indexHtml.replace(
-    '<script type="module" src="/assets/app.js?v=1.5.0"></script>',
-    '<script src="/assets/demo-mock.js?v=1.5.0"></script>\n  <script type="module" src="/assets/app.js?v=1.5.0"></script>'
+    /<script type="module" src="\/assets\/app\.js\?v=([^"]+)"><\/script>/,
+    '<script src="/assets/demo-mock.js?v=$1"></script>\n  <script type="module" src="/assets/app.js?v=$1"></script>'
   );
   await fs.writeFile(path.join(DIST_DIR, "index.html"), demoIndexHtml, "utf-8");
 
   const galleryHtml = await fs.readFile(path.join(PUBLIC_DIR, "gallery.html"), "utf-8");
   const demoGalleryHtml = galleryHtml.replace(
-    '<script type="module" src="/assets/gallery.js?v=1.5.0"></script>',
-    '<script src="/assets/demo-mock.js?v=1.5.0"></script>\n  <script type="module" src="/assets/gallery.js?v=1.5.0"></script>'
+    /<script type="module" src="\/assets\/gallery\.js\?v=([^"]+)"><\/script>/,
+    '<script src="/assets/demo-mock.js?v=$1"></script>\n  <script type="module" src="/assets/gallery.js?v=$1"></script>'
   );
   await fs.writeFile(path.join(DIST_DIR, "gallery.html"), demoGalleryHtml, "utf-8");
 
